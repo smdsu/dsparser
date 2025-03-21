@@ -1,2 +1,7 @@
 /env
 /dist
+/.vscode
+/tests
+/src/dsparser.egg-info
+/src/dsparser/__pycache__
+/src/dsparser/utils/__pycache__
