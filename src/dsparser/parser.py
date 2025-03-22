@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup, SoupStrainer
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 import queue
+import re
 
 from dsparser.utils.html_helpers import extract_html_header_footer, parse_message_date
 
@@ -33,7 +34,7 @@ def parse_discord_html(input_file, output_dir, workers=4, chunk_size_mb=10):
     
     global year_queues
     
-    only_messages = SoupStrainer("div", class_="chatlog__message-container")
+    only_messages = SoupStrainer("div", class_="chatlog__message-group")
     
     chunk_size = chunk_size_mb * 1024 * 1024  # convert MB to bytes
     buffer = ""
@@ -129,18 +130,39 @@ def year_file_writer(year, file_path):
 
 def process_messages_batch(soup):
     """Processes a batch of messages from the soup"""
-    messages = soup.find_all("div", class_="chatlog__message-container")
+    message_groups = soup.find_all("div", class_="chatlog__message-group")
     
-    for msg in messages:
-        msg_str = str(msg)
+    
+    for group in message_groups:
+        timestamp_spans = group.find_all("span", class_="chatlog__timestamp")
         
-        year = parse_message_date(msg_str)
+        if not timestamp_spans:
+            continue
+            
+        timestamp_span = timestamp_spans[0]
+        timestamp_text = timestamp_span.text.strip()
         
-        if year:
+        date_match = re.search(r"(\d{1,2})-(\w+)-(\d{2})", timestamp_text) or re.search(r"(\d{1,2})/(\d{2})/(\d{4})", timestamp_text)
+        if date_match:
+            day = date_match.group(1)
+            month = date_match.group(2)
+            short_year = date_match.group(3)
+            
+            if len(short_year) == 2:
+                year_prefix = "20" if int(short_year) < 50 else "19"
+                year = year_prefix + short_year
+            else:
+                year = short_year
+            
+            
+            group_str = str(group)
+            
             with queue_lock:
                 if year not in year_queues:
                     year_queues[year] = queue.Queue()
-                year_queues[year].put(msg_str)
+                year_queues[year].put(group_str)
+        else:
+            pass
 
 if __name__ == "__main__":
     from dsparser.cli import main

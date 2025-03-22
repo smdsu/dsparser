@@ -38,15 +38,45 @@ def parse_message_date(message_html: str) -> Optional[str]:
     Returns:
         String with the year or None if year not found
     """
-    # Look for timestamp in format <span class="chatlog__timestamp" title="...">
+    
+    # First look for timestamp in format <span class="chatlog__timestamp" title="...">
     timestamp_match = re.search(r'<span class="chatlog__timestamp"[^>]*title="([^"]+)"', message_html)
-    if not timestamp_match:
-        return None
     
-    date_string = timestamp_match.group(1)
+    if timestamp_match:
+        date_string = timestamp_match.group(1)
+        date_match = re.search(r"(\d{1,2}) (\w+) (\d{4})", date_string)
+        if date_match:
+            year = date_match.group(3)
+            return year
     
-    date_match = re.search(r"(\d{1,2}) (\w+) (\d{4})", date_string)
-    if not date_match:
-        return None
+    message_div_match = re.search(r'title="Message sent:\s*([^"]+)"', message_html)
+    if message_div_match:
+        date_string = message_div_match.group(1)
+        date_match = re.search(r"(\d{1,2})-(\w+)-(\d{2})", date_string)
+        if date_match:
+            short_year = date_match.group(3)
+            year_prefix = "20" if int(short_year) < 50 else "19"
+            year = year_prefix + short_year
+            return year
     
-    return date_match.group(3)
+    content_match = re.search(r'<span class="chatlog__timestamp"[^>]*>([^<]+)</span>', message_html, re.DOTALL)
+    if content_match:
+        date_string = content_match.group(1).strip()
+        date_match = re.search(r"(\d{1,2})-(\w+)-(\d{2})", date_string)
+        if date_match:
+            short_year = date_match.group(3)
+            year_prefix = "20" if int(short_year) < 50 else "19"
+            year = year_prefix + short_year
+            return year
+        
+        date_match = re.search(r"(\d{1,2})\s+(\w+)\s+(\d{4})", date_string)
+        if date_match:
+            year = date_match.group(3)
+            return year
+        
+        date_match = re.search(r"(\w+)\s+(\d{1,2}),\s+(\d{4})", date_string)
+        if date_match:
+            year = date_match.group(3)
+            return year
+    
+    return None
