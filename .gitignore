@@ -6,3 +6,4 @@
 /src/dsparser.egg-info
 /src/dsparser/__pycache__
 /src/dsparser/utils/__pycache__
+/benchmark/benchmark_results
