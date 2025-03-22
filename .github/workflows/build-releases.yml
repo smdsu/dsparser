@@ -7,112 +7,38 @@ on:
   workflow_dispatch:  # Allow manual triggers
 
 jobs:
-  build-windows:
-    runs-on: windows-latest
+  build:
     strategy:
       matrix:
-        arch: [x64, x86]
+        os: [macos-latest, ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
-          architecture: ${{ matrix.arch }}
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .
-          pip install nuitka
-      - name: Build executable
-        run: |
-          python tools/compile.py --production
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: dsparser-windows-${{ matrix.arch }}
-          path: dist/releases/dsparser-*-windows-${{ matrix.arch }}.exe*
-
-  build-linux:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .
-          pip install nuitka
-      - name: Build executable
-        run: |
-          python tools/compile.py --production
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: dsparser-linux-x64
-          path: dist/releases/dsparser-*-linux-x64*
-
-  build-macos:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .
-          pip install nuitka
-      - name: Build executable
-        run: |
-          python tools/compile.py --production
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: dsparser-darwin-x64
-          path: dist/releases/dsparser-*-darwin-x64*
-
-  build-macos-arm:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .
-          pip install nuitka
-      - name: Build executable
-        run: |
-          # Using special env var to target arm64
-          ARCHFLAGS="-arch arm64" python tools/compile.py --production
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: dsparser-darwin-arm64
-          path: dist/releases/dsparser-*-darwin-arm64*
-
-  create-release:
-    needs: [build-windows, build-linux, build-macos, build-macos-arm]
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v3
-        with:
-          path: releases
       
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: actions/setup-python@v5
         with:
-          files: releases/**/*
-          generate_release_notes: true
+          python-version: '3.9'
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Build Executable
+        uses: Nuitka/Nuitka-Action@main
+        with:
+          nuitka-version: main
+          script-name: src/dsparser/__main__.py
+          mode: app
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ runner.os }} Build
+          path: |
+            build/*.exe
+            build/*.bin
+            build/*.app/**/*
+          include-hidden-files: true
