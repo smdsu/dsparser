@@ -46,8 +46,9 @@ python benchmark.py --input path/to/discord_export.html --output benchmark_resul
 
 The benchmark creates detailed performance charts:
 
-![Benchmark Results](https://github.com/thesamedesu/dsparser/raw/main/docs/images/benchmark_results_example.png)
-![Benchmark Summary](https://github.com/thesamedesu/dsparser/raw/main/docs/benchmark_summary_example.md)
+![Benchmark Results](https://github.com/smdsu/dsparser/blob/master/docs/images/benchmark_results_example.png)
+
+![Benchmark Summary](https://github.com/smdsu/dsparser/blob/master/docs/examples/benchmark_summary_example.md)
 
 The results will help you select the optimal parameters for maximum processing speed on your system.
 
@@ -57,7 +58,7 @@ The results will help you select the optimal parameters for maximum processing s
 
 For users who don't want to install Python and dependencies, ready-to-use executable files are available:
 
-1. Download the latest version from the [Releases section](https://github.com/thesamedesu/dsparser/releases)
+1. Download the latest version from the [Releases section](https://github.com/smdsu/dsparser/releases)
 2. Choose the version for your operating system
 3. Run the program from the command line:
 
